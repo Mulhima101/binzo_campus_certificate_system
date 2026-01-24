@@ -170,10 +170,7 @@ export default function BinzoCertificateSystem() {
                 <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
                   <img src='/binzologo.jpeg' className='rounded-xl'/>
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">BinzO Campus</h1>
-                  <p className="text-sm text-gray-600">Admin - Certificate Management</p>
-                </div>
+                
               </div>
               <button
                 onClick={() => setIsAdmin(false)}
@@ -295,10 +292,11 @@ export default function BinzoCertificateSystem() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8 bg-white px-6 py-4 rounded-lg shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border-2 border-gray-800 rounded flex items-center justify-center">
-                <FileText className="w-5 h-5 text-gray-800" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900">BinzO Certificates</h1>
+              
+               <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
+                  <img src='/binzologo.jpeg' className='rounded-xl'/>
+                </div>
+              
             </div>
             <button 
               onClick={() => setShowAdminLogin(true)}
@@ -409,7 +407,7 @@ export default function BinzoCertificateSystem() {
                 Login
               </button>
 
-              <p className="text-xs text-gray-500 mt-4 text-center">Default password: admin123</p>
+             
             </div>
           </div>
         )}
@@ -466,7 +464,7 @@ export default function BinzoCertificateSystem() {
                 Login
               </button>
 
-              <p className="text-xs text-gray-500 mt-4 text-center">Default password: admin123</p>
+              
             </div>
           </div>
         )}
