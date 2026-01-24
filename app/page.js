@@ -20,8 +20,8 @@ export default function BinzoCertificateSystem() {
 
   // Certificate templates
   const templates = [
-    { id: 'cert1', name: 'Certificate of Human Resource Management', path: '/cert1.jpeg' },
-    { id: 'cert2', name: 'Certificate of English Workshop', path: '/cert2.jpeg' }
+    { id: 'cert1', name: 'Certificate of Human Resource Management', path: '/cert2.jpeg' },
+    { id: 'cert2', name: 'Certificate of English Workshop', path: '/cert1.jpeg' }
   ];
 
   // Check URL parameters on load
