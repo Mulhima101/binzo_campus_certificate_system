@@ -101,15 +101,15 @@ export default function BinzoCertificateSystem() {
       ctx.drawImage(img, 0, 0, 1200, 800);
       
       // Draw student name based on template
-      ctx.font = 'bold 70px Georgia, serif';
+      ctx.font = 'bold 40px Georgia, serif';
       ctx.fillStyle = currentTemplate === 'cert1' ? '#1e3a8a' : '#1f2937';
       ctx.textAlign = 'center';
-      // ctx.textBaseline = 'middle';
+      ctx.textBaseline = 'alphabetic';
       
       const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
+      const nameY = (canvas.height / 2) - 10; // Position name 10px above center
       
-      ctx.fillText(name.toUpperCase(), centerX, centerY);
+      ctx.fillText(name.toUpperCase(), centerX, nameY);
 
       if (download) {
         downloadCertificate(canvas);
