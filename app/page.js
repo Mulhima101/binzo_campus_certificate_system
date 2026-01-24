@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import  { useState, useRef, useEffect } from 'react';
 import { Share2, Download, FileText, Upload, X, Copy, Check, Link2, LogOut } from 'lucide-react';
 
 export default function BinzoCertificateSystem() {
@@ -47,7 +47,7 @@ export default function BinzoCertificateSystem() {
   }, [showPreview, studentName, currentTemplate]);
 
   const handleAdminLogin = () => {
-    if (adminPassword === 'admin123') {
+    if (adminPassword === 'binzo400') {
       setIsAdmin(true);
       setShowAdminLogin(false);
       setAdminPassword('');
@@ -104,12 +104,12 @@ export default function BinzoCertificateSystem() {
       ctx.font = 'bold 70px Georgia, serif';
       ctx.fillStyle = currentTemplate === 'cert1' ? '#1e3a8a' : '#1f2937';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      // ctx.textBaseline = 'middle';
       
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       
-      ctx.fillText(name, centerX, centerY);
+      ctx.fillText(name.toUpperCase(), centerX, centerY);
 
       if (download) {
         downloadCertificate(canvas);
@@ -128,7 +128,7 @@ export default function BinzoCertificateSystem() {
   };
 
   const handleGenerateCertificate = () => {
-    if (!studentName.trim()) {
+    if (!studentName.trim().toUpperCase()) {
       alert('Please enter your name');
       return;
     }
@@ -168,7 +168,7 @@ export default function BinzoCertificateSystem() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-white" />
+                  <img src='/binzologo.jpeg' className='rounded-xl'/>
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">BinzO Campus</h1>
@@ -423,9 +423,9 @@ export default function BinzoCertificateSystem() {
       <div className="text-center">
         <div className="mb-8">
           <div className="w-32 h-32 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
-            <span className="text-6xl font-bold bg-gradient-to-r from-pink-500 to-pink-600 bg-clip-text text-transparent">B</span>
+            <img src='/binzologo.jpeg' className='rounded-xl'/>
           </div>
-          <h1 className="text-6xl font-bold text-white mb-4">BINZO</h1>
+
           <p className="text-2xl text-pink-100">Campus Certificate System</p>
         </div>
 
