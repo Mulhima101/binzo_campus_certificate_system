@@ -230,8 +230,19 @@ export default function BinzoCertificateSystem() {
                               : 'border-gray-200 hover:border-pink-300'
                           }`}
                         >
-                          <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
-                            <div className="text-center">
+                          <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4 relative">
+                            {/* Add actual image display */}
+                            <img 
+                              src={template.path} 
+                              alt={template.name}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                // Fallback to icon if image fails to load
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                            <div className="text-center hidden">
                               <FileText className="w-16 h-16 mx-auto mb-2 text-gray-400" />
                               <p className="text-xs text-gray-500">Template Preview</p>
                             </div>
