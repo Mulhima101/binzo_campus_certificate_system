@@ -1,6 +1,6 @@
 'use client';
 
-import  { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Share2, Download, FileText, Upload, X, Copy, Check, Link2, LogOut } from 'lucide-react';
 
 export default function BinzoCertificateSystem() {
@@ -112,7 +112,7 @@ export default function BinzoCertificateSystem() {
       ctx.fillText(name.toUpperCase(), centerX, nameY);
 
       if (download) {
-        downloadCertificate(canvas);
+        downloadCertificateImage(canvas);
       }
     };
     
@@ -120,11 +120,34 @@ export default function BinzoCertificateSystem() {
     img.src = currentTemplate;
   };
 
-  const downloadCertificate = (canvas) => {
+  const downloadCertificateImage = (canvas) => {
     const link = document.createElement('a');
     link.download = `${studentName}_certificate.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
+  };
+
+  const downloadCertificatePDF = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Dynamically import jsPDF to avoid SSR issues
+    const { jsPDF } = await import('jspdf');
+    
+    const imgData = canvas.toDataURL('image/png');
+    
+    // Create PDF in landscape orientation
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'px',
+      format: [canvas.width, canvas.height]
+    });
+    
+    // Add image to PDF
+    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+    
+    // Download PDF
+    pdf.save(`${studentName}_certificate.pdf`);
   };
 
   const handleGenerateCertificate = () => {
@@ -231,13 +254,11 @@ export default function BinzoCertificateSystem() {
                           }`}
                         >
                           <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4 relative">
-                            {/* Add actual image display */}
                             <img 
                               src={template.path} 
                               alt={template.name}
                               className="w-full h-full object-contain"
                               onError={(e) => {
-                                // Fallback to icon if image fails to load
                                 e.target.style.display = 'none';
                                 e.target.nextSibling.style.display = 'block';
                               }}
@@ -354,7 +375,7 @@ export default function BinzoCertificateSystem() {
                     </div>
 
                     <button
-                      onClick={() => drawCertificate(studentName, true)}
+                      onClick={downloadCertificatePDF}
                       className="w-full py-3 bg-pink-700 text-white rounded-full font-bold hover:bg-pink-800 transition"
                     >
                       Download PDF
