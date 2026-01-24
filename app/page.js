@@ -20,8 +20,8 @@ export default function BinzoCertificateSystem() {
 
   // Certificate templates
   const templates = [
-    { id: 'cert1', name: 'Certificate of Appreciation (Blue)', path: '/cert1.jpeg' },
-    { id: 'cert2', name: 'Certificate of Participation (Pink)', path: '/cert2.jpeg' }
+    { id: 'cert1', name: 'Certificate of Human Resource Management', path: '/cert1.jpeg' },
+    { id: 'cert2', name: 'Certificate of English Workshop', path: '/cert2.jpeg' }
   ];
 
   // Check URL parameters on load
@@ -253,7 +253,7 @@ export default function BinzoCertificateSystem() {
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">Note: Upload your certificate images as cert1.jpeg and cert2.jpeg in the public folder</p>
+                    
                   </div>
 
                   <button
