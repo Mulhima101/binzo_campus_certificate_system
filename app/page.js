@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Share2, Download, FileText, Upload, X, Copy, Check, Link2, LogOut } from 'lucide-react';
+import { Share2, Download, FileText, Upload, X, Copy, Check, Link2, LogOut, Trash2 } from 'lucide-react';
 
 export default function BinzoCertificateSystem() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -14,26 +14,52 @@ export default function BinzoCertificateSystem() {
   const [studentName, setStudentName] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [currentCourse, setCurrentCourse] = useState('');
-  const [currentTemplate, setCurrentTemplate] = useState('');
+  const [currentTemplateId, setCurrentTemplateId] = useState('');
   const [copied, setCopied] = useState(false);
+  const [uploadedTemplates, setUploadedTemplates] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // Certificate templates
-  const templates = [
+  // Default certificate templates
+  const defaultTemplates = [
     { id: 'cert1', name: 'Certificate of Human Resource Management', path: '/cert2.jpeg' },
     { id: 'cert2', name: 'Certificate of English Workshop', path: '/cert1.jpeg' }
   ];
+
+  // Load uploaded templates from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('uploadedTemplates');
+    if (saved) {
+      setUploadedTemplates(JSON.parse(saved));
+    }
+  }, []);
+
+  // Save uploaded templates to localStorage whenever they change
+  useEffect(() => {
+    if (uploadedTemplates.length > 0) {
+      localStorage.setItem('uploadedTemplates', JSON.stringify(uploadedTemplates));
+    }
+  }, [uploadedTemplates]);
+
+  // Combine default and uploaded templates
+  const allTemplates = [...defaultTemplates, ...uploadedTemplates];
+
+  // Get template by ID
+  const getTemplateById = (templateId) => {
+    return allTemplates.find(t => t.id === templateId);
+  };
 
   // Check URL parameters on load
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const course = params.get('course');
-      const template = params.get('template');
+      const templateId = params.get('template');
       
-      if (course && template) {
+      if (course && templateId) {
         setCurrentCourse(decodeURIComponent(course));
-        setCurrentTemplate(template);
+        setCurrentTemplateId(templateId);
         setIsAdmin(false);
       }
     }
@@ -41,10 +67,13 @@ export default function BinzoCertificateSystem() {
 
   // Draw certificate when preview is shown
   useEffect(() => {
-    if (showPreview && studentName && currentTemplate) {
-      setTimeout(() => drawCertificate(studentName), 100);
+    if (showPreview && studentName && currentTemplateId) {
+      const template = getTemplateById(currentTemplateId);
+      if (template) {
+        setTimeout(() => drawCertificate(studentName, template.path), 100);
+      }
     }
-  }, [showPreview, studentName, currentTemplate]);
+  }, [showPreview, studentName, currentTemplateId, uploadedTemplates]);
 
   const handleAdminLogin = () => {
     if (adminPassword === 'binzo400') {
@@ -52,8 +81,56 @@ export default function BinzoCertificateSystem() {
       setShowAdminLogin(false);
       setAdminPassword('');
       setCurrentCourse('');
+      setCurrentTemplateId('');
     } else {
       alert('Incorrect password');
+    }
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (JPEG, PNG, etc.)');
+      return;
+    }
+
+    setUploading(true);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const templateName = prompt('Enter a name for this certificate template:');
+      if (!templateName) {
+        setUploading(false);
+        return;
+      }
+
+      const newTemplate = {
+        id: `custom_${Date.now()}`,
+        name: templateName,
+        path: e.target.result
+      };
+
+      setUploadedTemplates(prev => [...prev, newTemplate]);
+      setUploading(false);
+      alert('Template uploaded successfully!');
+    };
+
+    reader.onerror = () => {
+      alert('Error uploading file');
+      setUploading(false);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const deleteTemplate = (templateId) => {
+    if (confirm('Are you sure you want to delete this template?')) {
+      const newTemplates = uploadedTemplates.filter(t => t.id !== templateId);
+      setUploadedTemplates(newTemplates);
+      localStorage.setItem('uploadedTemplates', JSON.stringify(newTemplates));
     }
   };
 
@@ -68,7 +145,7 @@ export default function BinzoCertificateSystem() {
     }
 
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const link = `${baseUrl}?course=${encodeURIComponent(courseName)}&template=${selectedTemplate}`;
+    const link = `${baseUrl}?course=${encodeURIComponent(courseName)}&template=${encodeURIComponent(selectedTemplate)}`;
     
     setGeneratedLinks([...generatedLinks, { 
       course: courseName, 
@@ -87,7 +164,7 @@ export default function BinzoCertificateSystem() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const drawCertificate = (name, download = false) => {
+  const drawCertificate = (name, templatePath, download = false) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -100,14 +177,13 @@ export default function BinzoCertificateSystem() {
       
       ctx.drawImage(img, 0, 0, 1200, 800);
       
-      // Draw student name based on template
       ctx.font = 'bold 40px Georgia, serif';
-      ctx.fillStyle = currentTemplate === 'cert1' ? '#1e3a8a' : '#1f2937';
+      ctx.fillStyle = '#1e3a8a';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'alphabetic';
       
       const centerX = canvas.width / 2;
-      const nameY = (canvas.height / 2) - 10; // Position name 10px above center
+      const nameY = (canvas.height / 2) - 10;
       
       ctx.fillText(name.toUpperCase(), centerX, nameY);
 
@@ -117,7 +193,7 @@ export default function BinzoCertificateSystem() {
     };
     
     img.crossOrigin = 'anonymous';
-    img.src = currentTemplate;
+    img.src = templatePath;
   };
 
   const downloadCertificateImage = (canvas) => {
@@ -131,27 +207,22 @@ export default function BinzoCertificateSystem() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Dynamically import jsPDF to avoid SSR issues
     const { jsPDF } = await import('jspdf');
     
     const imgData = canvas.toDataURL('image/png');
     
-    // Create PDF in landscape orientation
     const pdf = new jsPDF({
       orientation: 'landscape',
       unit: 'px',
       format: [canvas.width, canvas.height]
     });
     
-    // Add image to PDF
     pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-    
-    // Download PDF
     pdf.save(`${studentName}_certificate.pdf`);
   };
 
   const handleGenerateCertificate = () => {
-    if (!studentName.trim().toUpperCase()) {
+    if (!studentName.trim()) {
       alert('Please enter your name');
       return;
     }
@@ -186,14 +257,12 @@ export default function BinzoCertificateSystem() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4">
         <div className="max-w-6xl mx-auto">
-          {/* Admin Header */}
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
-                  <img src='/binzologo.jpeg' className='rounded-xl'/>
+                  <img src='/binzologo.jpeg' className='rounded-xl' alt="Logo"/>
                 </div>
-                
               </div>
               <button
                 onClick={() => setIsAdmin(false)}
@@ -205,7 +274,25 @@ export default function BinzoCertificateSystem() {
             </div>
           </div>
 
-          {/* Create Certificate Link Button */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Upload Certificate Template</h2>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Upload className="w-5 h-5" />
+              {uploading ? 'Uploading...' : 'Upload New Template'}
+            </button>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Create New Certificate Link</h2>
             <button
@@ -217,7 +304,6 @@ export default function BinzoCertificateSystem() {
             </button>
           </div>
 
-          {/* Course Form Modal */}
           {showCourseForm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] overflow-y-auto">
@@ -243,38 +329,45 @@ export default function BinzoCertificateSystem() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">Select Certificate Template</label>
                     <div className="grid md:grid-cols-2 gap-4">
-                      {templates.map((template) => (
+                      {allTemplates.map((template) => (
                         <div
                           key={template.id}
-                          onClick={() => setSelectedTemplate(template.path)}
-                          className={`cursor-pointer border-4 rounded-lg overflow-hidden transition ${
-                            selectedTemplate === template.path
+                          className={`cursor-pointer border-4 rounded-lg overflow-hidden transition relative ${
+                            selectedTemplate === template.id
                               ? 'border-pink-500 shadow-lg scale-105'
                               : 'border-gray-200 hover:border-pink-300'
                           }`}
                         >
-                          <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4 relative">
+                          {template.id.startsWith('custom_') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteTemplate(template.id);
+                              }}
+                              className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition z-10"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          <div 
+                            onClick={() => setSelectedTemplate(template.id)}
+                            className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4"
+                          >
                             <img 
                               src={template.path} 
                               alt={template.name}
                               className="w-full h-full object-contain"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
-                              }}
                             />
-                            <div className="text-center hidden">
-                              <FileText className="w-16 h-16 mx-auto mb-2 text-gray-400" />
-                              <p className="text-xs text-gray-500">Template Preview</p>
-                            </div>
                           </div>
                           <div className="p-3 bg-gray-50">
                             <p className="text-sm font-semibold text-gray-900 text-center">{template.name}</p>
+                            {template.id.startsWith('custom_') && (
+                              <p className="text-xs text-gray-500 text-center mt-1">Custom Template</p>
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
-                    
                   </div>
 
                   <button
@@ -288,7 +381,6 @@ export default function BinzoCertificateSystem() {
             </div>
           )}
 
-          {/* Generated Links */}
           {generatedLinks.length > 0 && (
             <div className="bg-white rounded-2xl shadow-lg p-8">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Generated Certificate Links</h2>
@@ -317,18 +409,38 @@ export default function BinzoCertificateSystem() {
   }
 
   // STUDENT VIEW
-  if (currentCourse && currentTemplate) {
+  if (currentCourse && currentTemplateId) {
+    const currentTemplate = getTemplateById(currentTemplateId);
+    
+    if (!currentTemplate) {
+      return (
+        <div className="min-h-screen bg-gray-200 p-4 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Template Not Found</h2>
+            <p className="text-gray-600 mb-4">The certificate template could not be found.</p>
+            <button
+              onClick={() => {
+                setCurrentCourse('');
+                setCurrentTemplateId('');
+                window.history.pushState({}, '', '/');
+              }}
+              className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-gray-200 p-4">
         <div className="max-w-6xl mx-auto">
-          {/* Header */}
           <div className="flex items-center justify-between mb-8 bg-white px-6 py-4 rounded-lg shadow">
             <div className="flex items-center gap-3">
-              
-               <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
-                  <img src='/binzologo.jpeg' className='rounded-xl'/>
-                </div>
-              
+              <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
+                <img src='/binzologo.jpeg' className='rounded-xl' alt="Logo"/>
+              </div>
             </div>
             <button 
               onClick={() => setShowAdminLogin(true)}
@@ -338,10 +450,8 @@ export default function BinzoCertificateSystem() {
             </button>
           </div>
 
-          {/* Main Content */}
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="grid lg:grid-cols-2 gap-12">
-              {/* Left Side - Student Form */}
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-8">Student: Get Your Certificate</h2>
                 
@@ -364,7 +474,6 @@ export default function BinzoCertificateSystem() {
                 </button>
               </div>
 
-              {/* Right Side - Preview */}
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Live Preview</h3>
                 
@@ -382,7 +491,7 @@ export default function BinzoCertificateSystem() {
                     </button>
 
                     <button
-                      onClick={() => drawCertificate(studentName, true)}
+                      onClick={() => drawCertificate(studentName, currentTemplate.path, true)}
                       className="w-full py-3 bg-gray-300 text-gray-800 rounded-full font-bold hover:bg-gray-400 transition"
                     >
                       Download Image
@@ -409,7 +518,6 @@ export default function BinzoCertificateSystem() {
           </div>
         </div>
 
-        {/* Admin Login Modal */}
         {showAdminLogin && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
@@ -438,8 +546,6 @@ export default function BinzoCertificateSystem() {
               >
                 Login
               </button>
-
-             
             </div>
           </div>
         )}
@@ -453,9 +559,8 @@ export default function BinzoCertificateSystem() {
       <div className="text-center">
         <div className="mb-8">
           <div className="w-32 h-32 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
-            <img src='/binzologo.jpeg' className='rounded-xl'/>
+            <img src='/binzologo.jpeg' className='rounded-xl' alt="Logo"/>
           </div>
-
           <p className="text-2xl text-pink-100">Campus Certificate System</p>
         </div>
 
@@ -466,7 +571,6 @@ export default function BinzoCertificateSystem() {
           Admin Login
         </button>
 
-        {/* Admin Login Modal */}
         {showAdminLogin && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
@@ -495,8 +599,6 @@ export default function BinzoCertificateSystem() {
               >
                 Login
               </button>
-
-              
             </div>
           </div>
         )}
