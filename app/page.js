@@ -54,8 +54,8 @@ export default function BinzoCertificateSystem() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const course = params.get('course');
-      const templateId = params.get('template');
+      const course = params.get('');
+      const templateId = params.get('');
       
       if (course && templateId) {
         setCurrentCourse(decodeURIComponent(course));
@@ -362,7 +362,7 @@ export default function BinzoCertificateSystem() {
                           <div className="p-3 bg-gray-50">
                             <p className="text-sm font-semibold text-gray-900 text-center">{template.name}</p>
                             {template.id.startsWith('custom_') && (
-                              <p className="text-xs text-gray-500 text-center mt-1">Custom Template</p>
+                              <p className="text-xs text-gray-500 text-center mt-1"></p>
                             )}
                           </div>
                         </div>
