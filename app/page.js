@@ -15,6 +15,7 @@ export default function BinzoCertificateSystem() {
   const [showPreview, setShowPreview] = useState(false);
   const [currentCourse, setCurrentCourse] = useState('');
   const [currentTemplateId, setCurrentTemplateId] = useState('');
+  const [currentTemplatePath, setCurrentTemplatePath] = useState('');
   const [copied, setCopied] = useState(false);
   const [uploadedTemplates, setUploadedTemplates] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -54,12 +55,25 @@ export default function BinzoCertificateSystem() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const course = params.get('');
-      const templateId = params.get('');
+      const course = params.get('course');
+      const templateId = params.get('template');
+      const templateData = params.get('templateData'); // New: for custom templates
       
       if (course && templateId) {
         setCurrentCourse(decodeURIComponent(course));
         setCurrentTemplateId(templateId);
+        
+        // If templateData is provided (custom template), use it directly
+        if (templateData) {
+          setCurrentTemplatePath(decodeURIComponent(templateData));
+        } else {
+          // For default templates, get from the list
+          const template = getTemplateById(templateId);
+          if (template) {
+            setCurrentTemplatePath(template.path);
+          }
+        }
+        
         setIsAdmin(false);
       }
     }
@@ -67,13 +81,10 @@ export default function BinzoCertificateSystem() {
 
   // Draw certificate when preview is shown
   useEffect(() => {
-    if (showPreview && studentName && currentTemplateId) {
-      const template = getTemplateById(currentTemplateId);
-      if (template) {
-        setTimeout(() => drawCertificate(studentName, template.path), 100);
-      }
+    if (showPreview && studentName && currentTemplatePath) {
+      setTimeout(() => drawCertificate(studentName, currentTemplatePath), 100);
     }
-  }, [showPreview, studentName, currentTemplateId, uploadedTemplates]);
+  }, [showPreview, studentName, currentTemplatePath]);
 
   const handleAdminLogin = () => {
     if (adminPassword === 'binzo400') {
@@ -82,6 +93,7 @@ export default function BinzoCertificateSystem() {
       setAdminPassword('');
       setCurrentCourse('');
       setCurrentTemplateId('');
+      setCurrentTemplatePath('');
     } else {
       alert('Incorrect password');
     }
@@ -145,7 +157,14 @@ export default function BinzoCertificateSystem() {
     }
 
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const link = `${baseUrl}?course=${encodeURIComponent(courseName)}&template=${encodeURIComponent(selectedTemplate)}`;
+    const template = getTemplateById(selectedTemplate);
+    
+    let link = `${baseUrl}?course=${encodeURIComponent(courseName)}&template=${encodeURIComponent(selectedTemplate)}`;
+    
+    // If it's a custom template, include the template data in the URL
+    if (template && template.id.startsWith('custom_')) {
+      link += `&templateData=${encodeURIComponent(template.path)}`;
+    }
     
     setGeneratedLinks([...generatedLinks, { 
       course: courseName, 
@@ -362,7 +381,7 @@ export default function BinzoCertificateSystem() {
                           <div className="p-3 bg-gray-50">
                             <p className="text-sm font-semibold text-gray-900 text-center">{template.name}</p>
                             {template.id.startsWith('custom_') && (
-                              <p className="text-xs text-gray-500 text-center mt-1"></p>
+                              <p className="text-xs text-gray-500 text-center mt-1">Custom Template</p>
                             )}
                           </div>
                         </div>
@@ -409,30 +428,7 @@ export default function BinzoCertificateSystem() {
   }
 
   // STUDENT VIEW
-  if (currentCourse && currentTemplateId) {
-    const currentTemplate = getTemplateById(currentTemplateId);
-    
-    if (!currentTemplate) {
-      return (
-        <div className="min-h-screen bg-gray-200 p-4 flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Template Not Found</h2>
-            <p className="text-gray-600 mb-4">The certificate template could not be found.</p>
-            <button
-              onClick={() => {
-                setCurrentCourse('');
-                setCurrentTemplateId('');
-                window.history.pushState({}, '', '/');
-              }}
-              className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition"
-            >
-              Go Back
-            </button>
-          </div>
-        </div>
-      );
-    }
-
+  if (currentCourse && currentTemplatePath) {
     return (
       <div className="min-h-screen bg-gray-200 p-4">
         <div className="max-w-6xl mx-auto">
@@ -440,6 +436,10 @@ export default function BinzoCertificateSystem() {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
                 <img src='/binzologo.jpeg' className='rounded-xl' alt="Logo"/>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">BinzO Campus</h1>
+                <p className="text-sm text-gray-600">{currentCourse}</p>
               </div>
             </div>
             <button 
@@ -453,7 +453,7 @@ export default function BinzoCertificateSystem() {
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="grid lg:grid-cols-2 gap-12">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-8">Student: Get Your Certificate</h2>
+                <h2 className="text-3xl font-bold text-gray-900 mb-8">Get Your Certificate</h2>
                 
                 <div className="mb-6">
                   <label className="block text-base font-medium text-gray-900 mb-3">Enter Your Full Name</label>
@@ -491,7 +491,7 @@ export default function BinzoCertificateSystem() {
                     </button>
 
                     <button
-                      onClick={() => drawCertificate(studentName, currentTemplate.path, true)}
+                      onClick={() => drawCertificate(studentName, currentTemplatePath, true)}
                       className="w-full py-3 bg-gray-300 text-gray-800 rounded-full font-bold hover:bg-gray-400 transition"
                     >
                       Download Image
@@ -553,7 +553,29 @@ export default function BinzoCertificateSystem() {
     );
   }
 
-  // LANDING PAGE
+  // LANDING PAGE (or Template Not Found)
+  if (currentCourse && !currentTemplatePath) {
+    return (
+      <div className="min-h-screen bg-gray-200 p-4 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Template Not Found</h2>
+          <p className="text-gray-600 mb-4">The certificate template could not be found.</p>
+          <button
+            onClick={() => {
+              setCurrentCourse('');
+              setCurrentTemplateId('');
+              setCurrentTemplatePath('');
+              window.history.pushState({}, '', '/');
+            }}
+            className="px-6 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center p-4">
       <div className="text-center">
